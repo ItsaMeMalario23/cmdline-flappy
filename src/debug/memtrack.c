@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include <memtrack.h>
+#include <debug/memtrack.h>
 
 //
 //  Globals
@@ -616,7 +616,7 @@ void memtrackSetLimit_Implementation(size_t size)
 // Unless MTRACK_MANUAL_CLEANUP is defined, calling cleanup is optional
 void memtrackCleanup_Implementation(void)
 {
-    if (g_mTrackLaw != MTRACK_UNINITIALIZED || !g_memBuf)
+    if (g_mTrackLaw == MTRACK_UNINITIALIZED || !g_memBuf)
     {
         rWarning(g_memAllocated);
         return;

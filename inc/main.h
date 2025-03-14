@@ -2,7 +2,23 @@
 #define MAIN_H
 
 #define R_DEBUG
+#define RDEBUG_BREAK_EXIT
 
+#define SCREEN_WIDTH        160
+#define SCREEN_HEIGHT       48
+
+#define SCR_BUF_SIZE        32768
+#define SCR_ERR_BUF_SIZE    64
+
+#define SCR_EMPTY           0
+#define SCR_INCOMPLETE      1
+#define SCR_ERROR           2
+#define SCR_READY           3
+
+#define WORLD_HEIGHT        ((SCREEN_HEIGHT - 4))
+#define WORLD_WIDTH         (((SCREEN_WIDTH - 4) / 2))
+
+// Typedefs
 typedef signed char i8;
 typedef unsigned char u8;
 
@@ -19,5 +35,25 @@ typedef float f32;
 typedef double f64;
 
 typedef unsigned char bool;
+
+// Function types
+typedef void (*nav_f)(u8);
+
+// Structs
+typedef struct menu_s {
+    const char*   title;
+    const char**  items;
+    const nav_f*  navcom;
+    u32           navkey;
+    u32           len;
+} menu_t;
+
+typedef struct sprite_s {
+    u8* data;
+    u16 width;
+    u16 height;
+    i16 xpos;
+    i16 ypos;
+} sprite_t;
 
 #endif

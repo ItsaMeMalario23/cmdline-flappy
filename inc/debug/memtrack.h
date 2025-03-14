@@ -4,7 +4,7 @@
 #include <stdlib.h>
 
 #include <main.h>       /* necessary for debug mode defs */
-#include <rdebug.h>
+#include <debug/rdebug.h>
 
 //#define MTRACK_DEBUG
 //#define MTRACK_MANUAL_CLEANUP
@@ -17,6 +17,8 @@
 #if defined MTRACK_DEBUG && defined R_RELEASE
     #warning 'Memtrack debug and release mode defined at the same time'
 #endif
+
+extern size_t g_memAllocated;
 
 // ========================================================================== //
 //                                                                            //
