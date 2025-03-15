@@ -105,7 +105,7 @@ void gameController(u8 context)
 
     for (;;) {
         if (needRebuild)
-            updateWorld();
+            updateWorld(0, 0);
 
         currt = clock();
         dt = (f64) (currt - prevt) / CLOCKS_PER_SEC;
@@ -122,21 +122,62 @@ void gameController(u8 context)
         needRebuild = 1;
 
         if (input == 'w' || input == 'W')
-            moveSprite(bird, 0, -1);
+            moveSpriteF(bird, 0.0f, -1.0f);
         else if (input == 'a' || input == 'A')
-            moveSprite(bird, -1, 0);
+            moveSpriteF(bird, -1.0f, 0.0f);
         else if (input == 's' || input == 'S')
-            moveSprite(bird, 0, 1);
+            moveSpriteF(bird, 0.0f, 1.0f);
         else if (input == 'd' || input == 'D')
-            moveSprite(bird, 1, 0);
+            moveSpriteF(bird, 1.0f, 0.0f);
         else if (input == 'z')
-            moveSprite(pipe, 0, -1);
+            moveSpriteI(pipe, 0, -1);
         else if (input == 'h')
-            moveSprite(pipe, 0, 1);
+            moveSpriteI(pipe, 0, 1);
         else if (input == 27)
             break;     // esc
         else
             needRebuild = 0;
+    }
+
+    cleanupWorld();
+}
+
+// flappy game loop
+void flappyController(u8 context)
+{
+    initWorld();
+
+    bool updraft;
+    char input;
+
+    clock_t prevt = clock();
+    clock_t currt;
+
+    updateWorld(0, 0);
+
+    for (;;) {
+        currt = clock();
+
+        while (currt - prevt < FIXED_FRAME_TIME)
+            currt = clock();
+
+        setFrametime(currt - prevt);
+
+        input = getKeyboardInput();
+
+        if (input == 27)
+            break;  // esc
+        else if (input == 'w' || input == 32)
+            updraft = 1;
+        else
+            updraft = 0;
+
+        requestWorldRebuild();
+
+        if (updateWorld(currt - prevt, updraft) > 0)
+            break;
+
+        prevt = currt;
     }
 
     cleanupWorld();

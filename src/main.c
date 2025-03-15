@@ -20,7 +20,7 @@ int main(void)
     if (!initCmdRenderer())
         return EXIT_FAILURE;
 
-    const nav_f mainNav[3] = {gameController, dummyCallback, exitCallback};
+    const nav_f mainNav[3] = {flappyController, dummyCallback, exitCallback};
 
     menu_t mainMenu = {"MAIN MENU", mainMenuItems, mainNav, 0, 3};
 

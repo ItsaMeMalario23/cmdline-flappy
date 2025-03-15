@@ -8,6 +8,7 @@
 #include <debug/memtrack.h>
 
 u64 g_screenState = 0;
+u16 g_prevBufSize = 0;
 
 char g_screenBuf[SCR_BUF_SIZE];
 char g_screenErrBuf[SCR_ERR_BUF_SIZE];
@@ -60,6 +61,7 @@ char* getScreenBuf(void)
 
 void screenResetBuf(void)
 {
+    g_prevBufSize = getScreenIdx();
     g_screenState = 0;
 }
 
@@ -96,7 +98,7 @@ void screenBuildTextLine(const char* line, u8 ctrlChars)
 void screenBuildPixelLine(const u8* pxIds, size_t pxLen)
 {
     rAssert(pxIds);
-    rAssert(pxLen <= (SCREEN_WIDTH - 4) / 2);
+    rAssert(pxLen <= (SCREEN_WIDTH - 2) / 2);
 
     rAssertMsg(getScreenState() != SCR_EMPTY, "Build pixel line: screen buf empty");
     rAssertMsg(getScreenState() != SCR_ERROR, "Build pixel line: screen buf error");
@@ -134,7 +136,7 @@ void screenBuildPixelLine(const u8* pxIds, size_t pxLen)
 
     idx = getScreenIdx();
 
-    setScreenIdx(idx + snprintf(g_screenBuf + idx, SCR_BUF_SIZE - idx, SCR_BORDER_STR " %s " SCR_BORDER_STR, linebuf));
+    setScreenIdx(idx + snprintf(g_screenBuf + idx, SCR_BUF_SIZE - idx, SCR_BORDER_STR "%s" SCR_BORDER_STR, linebuf));
     setScreenLines(getScreenLines() + 1);
 }
 
@@ -184,7 +186,7 @@ void screenBuildHeader(void)
     setScreenState(SCR_INCOMPLETE);
 }
 
-void screenBuildHeaderFPS(f64 dt)
+void screenBuildHeaderFPS(u64 dt)
 {
     rAssert(!getScreenState());
     rAssert(!getScreenLines());
@@ -192,24 +194,24 @@ void screenBuildHeaderFPS(f64 dt)
 
     memcpy(g_screenBuf, TXT_RESET, sizeof(char) * 14);
     memset(g_screenBuf + 14, '-', sizeof(char) * SCREEN_WIDTH);
-    memset(g_screenBuf + SCREEN_WIDTH + 15, 32, sizeof(char) * (SCREEN_WIDTH - 2));
+    //memset(g_screenBuf + SCREEN_WIDTH + 15, 32, sizeof(char) * (SCREEN_WIDTH - 2));
 
-    char fpsbuf[40];
+    char fpsbuf[64];
 
-    if (dt > 0.000000000001f)
-        snprintf(fpsbuf, 40, "< FPS: %.2f >----< MEM: %lld B >", 1 / dt, g_memAllocated);
+    if (dt)
+        snprintf(fpsbuf, 64, "< FPS: %.1f >----< MEM: %3lld B >----< BUF: %5d >", (f64) 1000 / dt, g_memAllocated, g_prevBufSize);
     else
-        snprintf(fpsbuf, 40, "< FPS:  N/A  >----< MEM: %lld B >", g_memAllocated);
+        snprintf(fpsbuf, 64, "< FPS:  N/A >----< MEM: %3lld B >----< BUF: %5d >", g_memAllocated, g_prevBufSize);
 
-    memcpy(g_screenBuf + 134, fpsbuf, strnlen(fpsbuf, 40));
+    memcpy(g_screenBuf + 120, fpsbuf, strnlen(fpsbuf, 64));
 
     g_screenBuf[14] = '+';
     g_screenBuf[SCREEN_WIDTH + 13] = '+';
-    g_screenBuf[SCREEN_WIDTH + 14] = '|';
-    g_screenBuf[(SCREEN_WIDTH * 2) + 13] = '|';
+    //g_screenBuf[SCREEN_WIDTH + 14] = '|';
+    //g_screenBuf[(SCREEN_WIDTH * 2) + 13] = '|';
 
-    setScreenIdx(334);
-    setScreenLines(2);
+    setScreenIdx(174);
+    setScreenLines(1);
     setScreenState(SCR_INCOMPLETE);
 }
 
@@ -241,25 +243,4 @@ void screenBuildFooter(void)
     g_screenBuf[idx + SCREEN_WIDTH] = '\0';
     
     setScreenState(SCR_READY);
-}
-
-// temp
-
-void testScr(void)
-{
-    printf("idx: %d state: %d lines %d\n", getScreenIdx(), getScreenState(), getScreenLines());
-    setScreenIdx(23);
-    printf("idx: %d state: %d lines %d\n", getScreenIdx(), getScreenState(), getScreenLines());
-    setScreenState(SCR_READY);
-    setScreenLines(69);
-    printf("idx: %d state: %d lines %d\n", getScreenIdx(), getScreenState(), getScreenLines());
-    setScreenLines(0);
-    printf("idx: %d state: %d lines %d\n", getScreenIdx(), getScreenState(), getScreenLines());
-    setScreenIdx(0);
-    setScreenState(0);
-    printf("idx: %d state: %d lines %d\n", getScreenIdx(), getScreenState(), getScreenLines());
-    setScreenIdx(15999);
-    setScreenState(SCR_ERROR);
-    setScreenLines(48);
-    printf("idx: %d state: %d lines %d\n", getScreenIdx(), getScreenState(), getScreenLines());
 }

@@ -68,7 +68,9 @@ const u8 g_bird[12][18] = {
     { 7,  7,  7,  7,  7,  7,  0,  0,  0,  0,  0,  7,  7,  7,  7,  7,  7,  7}
 };
 
-f64 frametime = -1.0f;
+u64 g_frametimeMS = 0;
+
+HANDLE g_conOut = NULL;
 
 void setErrorBuf(char* s) {}
 void displayError() {}
@@ -100,6 +102,8 @@ bool initCmdRenderer(void)
     if (!SetConsoleMode(hIn, mActIn))
         return 0;
 
+    g_conOut = hOut;
+
     rModeHideCursor();
     rModeSetWTitle("C-FLAPPY");
 
@@ -107,7 +111,7 @@ bool initCmdRenderer(void)
     system("cls");
 
     char cmdbuf[32];
-    snprintf(cmdbuf, 32, "mode con: cols=%d lines=%d", SCREEN_WIDTH, SCREEN_HEIGHT + 1);
+    snprintf(cmdbuf, 32, "mode con: cols=%d lines=%d", SCREEN_WIDTH, SCREEN_HEIGHT);
 
     system(cmdbuf);
 
@@ -136,8 +140,8 @@ void renderMenu(menu_t* menu, u8 selected)
 {
     screenResetBuf();
 
-    //screenBuildHeader();
-    screenBuildHeaderFPS(-1.0f);
+    screenBuildHeaderFPS(0);
+    screenBuildEmptyLine();
     screenBuildTextLine(g_rMenuTitle, 120);
     
     screenBuildPadding(3);
@@ -181,7 +185,7 @@ void renderWorld(u8 worldRenderBuf[WORLD_HEIGHT][WORLD_WIDTH])
 {
     screenResetBuf();
 
-    screenBuildHeaderFPS(frametime);
+    screenBuildHeaderFPS(g_frametimeMS);
 
     for (u16 i = 0; i < WORLD_HEIGHT; i++) {
         screenBuildPixelLine(worldRenderBuf[i], WORLD_WIDTH);
@@ -191,9 +195,9 @@ void renderWorld(u8 worldRenderBuf[WORLD_HEIGHT][WORLD_WIDTH])
     rebuildScreen();
 }
 
-void setFrametime(f64 ftime)
+void setFrametime(u64 ftime)
 {
-    frametime = ftime;
+    g_frametimeMS = ftime;
 }
 
 void rModeHideCursor()

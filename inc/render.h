@@ -78,7 +78,7 @@ void rebuildScreen(void);
 void renderMenu(menu_t* menu, u8 selected);
 void renderWorld(u8 worldRenderBuf[WORLD_HEIGHT][WORLD_WIDTH]);
 
-void setFrametime(f64 ftime);
+void setFrametime(u64 ftime);
 
 void rModeHideCursor();
 void rModeShowCursor();

@@ -16,7 +16,7 @@ void screenBuildTextLine(const char* line, u8 ctrlChars);
 void screenBuildPixelLine(const u8* pxIds, size_t pxLen);
 void screenBuildEmptyLine(void);
 void screenBuildPadding(u8 numLines);
-void screenBuildHeaderFPS(f64 dt);
+void screenBuildHeaderFPS(u64 dt);
 void screenBuildHeader(void);
 void screenBuildFooter(void);
 

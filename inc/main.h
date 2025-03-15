@@ -15,8 +15,12 @@
 #define SCR_ERROR           2
 #define SCR_READY           3
 
-#define WORLD_HEIGHT        ((SCREEN_HEIGHT - 4))
-#define WORLD_WIDTH         (((SCREEN_WIDTH - 4) / 2))
+#define WORLD_HEIGHT        ((SCREEN_HEIGHT - 2))
+#define WORLD_WIDTH         (((SCREEN_WIDTH - 2) / 2))
+
+#define FIXED_FRAME_TIME    36
+
+#define EPSILON             (0.00000001f)
 
 // Typedefs
 typedef signed char i8;
@@ -47,13 +51,5 @@ typedef struct menu_s {
     u32           navkey;
     u32           len;
 } menu_t;
-
-typedef struct sprite_s {
-    u8* data;
-    u16 width;
-    u16 height;
-    i16 xpos;
-    i16 ypos;
-} sprite_t;
 
 #endif
