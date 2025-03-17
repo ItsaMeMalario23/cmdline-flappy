@@ -57,6 +57,70 @@ static inline i32 randRange(i32 lbound, i32 ubound)
     return (rand() % (ubound - lbound)) + lbound;
 }
 
+void setDefaults(void)
+{
+    g_worldGravityAccel = WORLD_STD_GRAVITY_DV;
+    g_worldUpdraftVelocity = WORLD_STD_UPDRAFT_V;
+    g_worldUpdraftDamping = WORLD_STD_UPDRAFT_DAMPING;
+    g_worldBirdXPos = WORLD_STD_BIRD_XPOS;
+    g_worldBirdYPos = WORLD_STD_BIRD_YPOS;
+    g_worldFirstPipeDistance = WORLD_STD_FIRST_PIPE;
+    g_worldPipeDistance = WORLD_STD_PIPE_DISTANCE;
+    g_worldScrollInterval = WORLD_STD_SCROLL_SPEED;
+}
+
+void setGravity(f32 gravity)
+{
+    rAssert(gravity > 0.0f);
+
+    g_worldGravityAccel = gravity;
+}
+
+void setUpdraftStrength(f32 strength)
+{
+    rAssert(strength > 0.0f);
+
+    g_worldUpdraftVelocity = -strength;
+}
+
+void setUpdraftDamping(f32 damping)
+{
+    rAssert(damping > 0.0f && damping < 1.0f);
+
+    g_worldUpdraftDamping = damping;
+}
+
+void setScrollInterval(u8 interval)
+{
+    rAssert(interval);
+
+    g_worldScrollInterval = interval;
+}
+
+void setBirdXPos(f32 xpos)
+{
+    rAssert(xpos > 0.0f && xpos < WORLD_WIDTH - 8);
+
+    g_worldBirdXPos = xpos;
+}
+
+void setBirdYPos(f32 ypos)
+{
+    rAssert(ypos > 0.0f && ypos < WORLD_HEIGHT - 6);
+
+    g_worldBirdYPos = ypos;
+}
+
+void setFirstPipeDistance(u16 distance)
+{
+    g_worldFirstPipeDistance = distance;
+}
+
+void setPipeDistance(u16 distance)
+{
+    g_worldPipeDistance = distance;
+}
+
 sprite_t* addSprite(u16 width, u16 height, u16 posType, u16 spriteType, i32 xpos_i, i32 ypos_i, f32 xpos_f, f32 ypos_f)
 {
     if (g_wSpriteIdx > WORLD_MAX_SPRITES - 1)

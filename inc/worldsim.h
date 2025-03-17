@@ -23,7 +23,7 @@
 #define WORLD_STD_GRAVITY_DV        ( 10.0f)
 #define WORLD_STD_UPDRAFT_V         (-27.0f)
 #define WORLD_STD_UPDRAFT_DAMPING   (  0.9f)
-#define WORLD_STD_SCROLL_SPEED      ( 1)
+#define WORLD_STD_SCROLL_SPEED      (  1)
 #define WORLD_STD_BIRD_XPOS         ( 23.0f)
 #define WORLD_STD_BIRD_YPOS         ( 10.0f)
 #define WORLD_STD_FIRST_PIPE        ( 47)
@@ -56,6 +56,16 @@ typedef struct sprite_s {   // sprite data
     } pos;
 
 } sprite_t;
+
+void setDefaults(void);
+void setGravity(f32 gravity);
+void setUpdraftStrength(f32 strength);
+void setUpdraftDamping(f32 damping);
+void setScrollInterval(u8 interval);
+void setBirdXPos(f32 xpos);
+void setBirdYPos(f32 ypos);
+void setFirstPipeDistance(u16 distance);
+void setPipeDistance(u16 distance);
 
 sprite_t* addSprite(u16 width, u16 height, u16 posType, u16 spriteType, i32 xpos_i, i32 ypos_i, f32 xpos_f, f32 ypos_f);
 sprite_t* addPipe(i32 xpos, i32 ypos, u16 height, bool direction);
