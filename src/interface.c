@@ -86,10 +86,10 @@ void gameController(u8 context)
 {
     initWorld();
 
-    (void) addPipe(7, 5, 3);
-    (void) addPipe(4, 42, 14);
-    (void) addPipe(6, 23, 34);
-    sprite_t* pipe = addPipe(50, 64, 1);
+    (void) addPipe(7, 5, 3, 1);
+    (void) addPipe(4, 42, 14, 1);
+    (void) addPipe(6, 23, 34, 1);
+    sprite_t* pipe = addPipe(50, 64, 1, 1);
     sprite_t* bird = addBird(23, 7);
 
     bool needRebuild = 1;

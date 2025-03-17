@@ -194,7 +194,6 @@ void screenBuildHeaderFPS(u64 dt)
 
     memcpy(g_screenBuf, TXT_RESET, sizeof(char) * 14);
     memset(g_screenBuf + 14, '-', sizeof(char) * SCREEN_WIDTH);
-    //memset(g_screenBuf + SCREEN_WIDTH + 15, 32, sizeof(char) * (SCREEN_WIDTH - 2));
 
     char fpsbuf[64];
 
@@ -203,12 +202,10 @@ void screenBuildHeaderFPS(u64 dt)
     else
         snprintf(fpsbuf, 64, "< FPS:  N/A >----< MEM: %3lld B >----< BUF: %5d >", g_memAllocated, g_prevBufSize);
 
-    memcpy(g_screenBuf + 120, fpsbuf, strnlen(fpsbuf, 64));
+    memcpy(g_screenBuf + 119, fpsbuf, strnlen(fpsbuf, 64));
 
     g_screenBuf[14] = '+';
     g_screenBuf[SCREEN_WIDTH + 13] = '+';
-    //g_screenBuf[SCREEN_WIDTH + 14] = '|';
-    //g_screenBuf[(SCREEN_WIDTH * 2) + 13] = '|';
 
     setScreenIdx(174);
     setScreenLines(1);

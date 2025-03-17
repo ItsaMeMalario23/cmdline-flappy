@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 #include <math.h>
 
 #include <worldsim.h>
@@ -10,19 +11,35 @@
 
 wstate_t g_worldState = WORLD_UNINIT;
 
-u8 g_worldRenderBuf[WORLD_HEIGHT][WORLD_WIDTH];
+texturedata_t g_worldRenderBuf[WORLD_HEIGHT][WORLD_WIDTH];
 
-sprite_t g_sprites[WORLD_MAX_SPRITES];
-u8 g_spriteIdx = 0;
+sprite_t g_wSprites[WORLD_MAX_SPRITES];
+u8 g_wSpriteIdx = 0;
 
-u64 g_scrollInterval = WORLD_BASE_SCROLL_INTERVAL;
-i64 g_score = 0;
+i64 g_wGameScore = 0;
+
+// world simulation settings
+f32 g_worldGravityAccel =       WORLD_STD_GRAVITY_DV;
+f32 g_worldUpdraftVelocity =    WORLD_STD_UPDRAFT_V;
+f32 g_worldUpdraftDamping =     WORLD_STD_UPDRAFT_DAMPING;
+f32 g_worldBirdXPos =           WORLD_STD_BIRD_XPOS;
+f32 g_worldBirdYPos =           WORLD_STD_BIRD_YPOS;
+u16 g_worldFirstPipeDistance =  WORLD_STD_FIRST_PIPE;
+u16 g_worldPipeDistance =       WORLD_STD_PIPE_DISTANCE;
+u8  g_worldScrollInterval =     WORLD_STD_SCROLL_SPEED;
 
 const texturedata_t g_pipeData[4][8] = {
     { 2,  2,  2,  2,  2,  2,  2,  2},
     { 2, 10, 10, 10, 15, 10, 10,  2},
-    { 2,  2, 10, 10, 15, 10,  2,  2},
+    {16,  2, 10, 10, 15, 10,  2, 16},
     {16,  2, 10, 10, 15, 10,  2, 16}
+};
+
+const texturedata_t g_pipeDataYlw[4][8] = {
+    { 3,  3,  3,  3,  3,  3,  3,  3},
+    { 3, 11, 11, 11, 15, 11, 11,  3},
+    {16,  3, 11, 11, 15, 11,  3, 16},
+    {16,  3, 11, 11, 15, 11,  3, 16}
 };
 
 const texturedata_t g_birdData[40] = {
@@ -33,18 +50,25 @@ const texturedata_t g_birdData[40] = {
     16, 16,  3,  3,  3,  3,  3, 16,
 };
 
+static inline i32 randRange(i32 lbound, i32 ubound)
+{
+    rAssert(ubound > lbound);
+
+    return (rand() % (ubound - lbound)) + lbound;
+}
+
 sprite_t* addSprite(u16 width, u16 height, u16 posType, u16 spriteType, i32 xpos_i, i32 ypos_i, f32 xpos_f, f32 ypos_f)
 {
-    if (g_spriteIdx > WORLD_MAX_SPRITES - 1)
+    if (g_wSpriteIdx > WORLD_MAX_SPRITES - 1)
         return NULL;
 
     rAssert(width);
     rAssert(height);
     rAssert(posType == POS_TYPE_FLOAT || posType == POS_TYPE_INT);
 
-    sprite_t* sprite = g_sprites + g_spriteIdx;
+    sprite_t* sprite = g_wSprites + g_wSpriteIdx;
 
-    g_spriteIdx++;
+    g_wSpriteIdx++;
 
     sprite->width = width;
     sprite->height = height;
@@ -70,20 +94,29 @@ sprite_t* addSprite(u16 width, u16 height, u16 posType, u16 spriteType, i32 xpos
     return sprite;
 }
 
-sprite_t* addPipe(i32 xpos, i32 ypos, u16 height)
+sprite_t* addPipe(i32 xpos, i32 ypos, u16 height, bool direction)
 {
     sprite_t* sprite = addSprite(8, height + 4, POS_TYPE_INT, SPRITE_PIPE, xpos, ypos, 0.0f, 0.0f);
 
     if (!sprite)
         return NULL;
 
-    memcpy(sprite->data, g_pipeData[0], sizeof(u8) * 8);
-    memcpy(sprite->data + 8, g_pipeData[1], sizeof(u8) * 8);
-    memcpy(sprite->data + 16, g_pipeData[1], sizeof(u8) * 8);
-    memcpy(sprite->data + 24, g_pipeData[2], sizeof(u8) * 8);
+    if (direction) {
+        memcpy(sprite->data, g_pipeData[0], sizeof(u8) * 8);
+        memcpy(sprite->data + 8, g_pipeData[1], sizeof(u8) * 8);
+        memcpy(sprite->data + 16, g_pipeData[1], sizeof(u8) * 8);
+        memcpy(sprite->data + 24, g_pipeData[2], sizeof(u8) * 8);
+    } else {
+        memcpy(sprite->data + (height + 3) * 8, g_pipeData[0], sizeof(u8) * 8);
+        memcpy(sprite->data + (height + 2) * 8, g_pipeData[1], sizeof(u8) * 8);
+        memcpy(sprite->data + (height + 1) * 8, g_pipeData[1], sizeof(u8) * 8);
+        memcpy(sprite->data + (height * 8), g_pipeData[2], sizeof(u8) * 8);
+    }
+
+    u8 offset = direction ? 24 : 0;
 
     for (u8 i = 0; i < height; i++)
-        memcpy(sprite->data + 24 + i * 8, g_pipeData[3], sizeof(u8) * 8);
+        memcpy(sprite->data + offset + i * 8, g_pipeData[3], sizeof(u8) * 8);
 
     return sprite;
 }
@@ -173,13 +206,7 @@ void renderSprite(sprite_t* sprite)
         src = &sprite->data[y * sprite->width];
 
         for (u16 x = 0; x < sprite->width; x++) {
-            if (*src == PXID_CLEAR) {
-                dst++;
-                src++;
-                continue;
-            }
-
-            if (xpos + x < 0) {
+            if (*src == PXID_CLEAR || xpos + x < 0) {
                 dst++;
                 src++;
                 continue;
@@ -195,26 +222,34 @@ void renderSprite(sprite_t* sprite)
 
 void initWorld(void)
 {
-    memset(g_sprites, 0, sizeof(g_sprites));
+    memset(g_wSprites, 0, sizeof(g_wSprites));
     memset(g_worldRenderBuf, PXID_WHITE, sizeof(g_worldRenderBuf));
 
-    (void) addBird(WORLD_BIRD_STD_XPOS, 10.0f);
-    (void) addPipe(40, 32, 20);
-    (void) addPipe(70, 33, 20);
-    (void) addPipe(100, 34, 20);
-    (void) addPipe(130, 35, 20);
+    (void) addBird(g_worldBirdXPos, g_worldBirdYPos);
 
+    (void) addPipe(g_worldBirdXPos + g_worldFirstPipeDistance, randomizePipe(1), 20, 1);
+    (void) addPipe(g_worldBirdXPos + g_worldFirstPipeDistance, randomizePipe(0), 20, 0);
+    (void) addPipe(g_worldBirdXPos + g_worldFirstPipeDistance + g_worldPipeDistance, randomizePipe(1), 20, 1);
+    (void) addPipe(g_worldBirdXPos + g_worldFirstPipeDistance + g_worldPipeDistance, randomizePipe(0), 20, 0);
+    (void) addPipe(g_worldBirdXPos + g_worldFirstPipeDistance + (g_worldPipeDistance * 2), randomizePipe(1), 20, 1);
+    (void) addPipe(g_worldBirdXPos + g_worldFirstPipeDistance + (g_worldPipeDistance * 2), randomizePipe(0), 20, 0);
+
+    fflush(stdin);
+
+    srand(time(NULL));
+
+    g_wGameScore = 0;
     g_worldState = WORLD_NEED_REBUILD;
 }
 
 void cleanupWorld(void)
 {
-    for (u8 i = 0; i < g_spriteIdx; i++)
-        memFree(g_sprites[i].data);
+    for (u8 i = 0; i < g_wSpriteIdx; i++)
+        memFree(g_wSprites[i].data);
 
-    memset(g_sprites, 0, sizeof(g_sprites));
+    memset(g_wSprites, 0, sizeof(g_wSprites));
 
-    g_spriteIdx = 0;
+    g_wSpriteIdx = 0;
     g_worldState = WORLD_UNINIT;
 }
 
@@ -232,7 +267,7 @@ i64 updateWorld(u64 dt, bool updraft)
     if (g_worldState != WORLD_NEED_REBUILD)
         return -1;
 
-    static u64 scrollTimer = 0;
+    static u8 scrollTimer = 0;
     static sprite_t* bird = NULL;
 
     if (!bird)
@@ -240,15 +275,10 @@ i64 updateWorld(u64 dt, bool updraft)
 
     rAssert(bird);
 
-    scrollTimer += dt;
-
     // scroll screen
-    if (scrollTimer >= g_scrollInterval) {
+    if (++scrollTimer >= g_worldScrollInterval) {
         scrollScreen();
         scrollTimer = 0;
-
-        if (g_scrollInterval > 30)
-            g_scrollInterval -= 2;
     }
 
     // move bird
@@ -256,15 +286,16 @@ i64 updateWorld(u64 dt, bool updraft)
 
     // check bird collision
     if (checkCollision(bird))
-        return g_score;
+        return g_wGameScore;
 
-    g_score += 100;
+    // update score
+    g_wGameScore += 100;
 
     // render world
     memset(g_worldRenderBuf, PXID_WHITE, sizeof(g_worldRenderBuf));
 
-    for (u8 i = 0; i < g_spriteIdx; i++)
-        renderSprite(&g_sprites[i]);
+    for (u8 i = 0; i < g_wSpriteIdx; i++)
+        renderSprite(&g_wSprites[i]);
 
     renderWorld(g_worldRenderBuf);
     
@@ -280,9 +311,9 @@ i64 updateWorld(u64 dt, bool updraft)
 // find bird in sprites buffer
 sprite_t* getBird(void)
 {
-    for (u8 i = 0; i < g_spriteIdx; i++) {
-        if (g_sprites[i].spriteType == SPRITE_BIRD)
-            return g_sprites + i;
+    for (u8 i = 0; i < g_wSpriteIdx; i++) {
+        if (g_wSprites[i].spriteType == SPRITE_BIRD)
+            return g_wSprites + i;
     }
 
     return NULL;
@@ -293,15 +324,15 @@ void scrollScreen(void)
 {
     sprite_t* tmp;
 
-    for (u8 i = 0; i < g_spriteIdx; i++) {
-        if (g_sprites[i].spriteType != SPRITE_PIPE)
+    for (u8 i = 0; i < g_wSpriteIdx; i++) {
+        if (g_wSprites[i].spriteType != SPRITE_PIPE)
             continue;
 
-        tmp = g_sprites + i;
+        tmp = g_wSprites + i;
 
         rAssert(tmp->posType == POS_TYPE_INT);
 
-        if (tmp->pos.i.x < -37)
+        if (tmp->pos.i.x < -60)
             resetPipe(tmp);   // reset
 
         moveSpriteI(tmp, -1, 0);
@@ -316,7 +347,20 @@ void resetPipe(sprite_t* pipe)
     rAssert(pipe->spriteType == SPRITE_PIPE);
 
     pipe->pos.i.x = WORLD_WIDTH + 1;
-    pipe->pos.i.y = (rand() % (WORLD_HEIGHT - 5 - (WORLD_HEIGHT / 2))) + (WORLD_HEIGHT / 2);
+
+    if (pipe->pos.i.y > WORLD_HEIGHT / 2)
+        pipe->pos.i.y = randomizePipe(1);
+    else
+        pipe->pos.i.y = randomizePipe(0);
+}
+
+// check if pipe is top or bottom and randomize position
+i32 randomizePipe(bool direction)
+{
+    if (direction)
+        return randRange((WORLD_HEIGHT / 2) + 1, WORLD_HEIGHT - 4);
+    else
+        return randRange(-20, -12);
 }
 
 // return true if bird collided with pipe
@@ -329,12 +373,12 @@ bool checkCollision(sprite_t* bird)
     rAssert(bird);
     rAssert(bird->posType == POS_TYPE_FLOAT);
     rAssert(bird->spriteType == SPRITE_BIRD);
-    rAssert(bird->pos.f.x + 0.01f > WORLD_BIRD_STD_XPOS && bird->pos.f.x - 0.01f < WORLD_BIRD_STD_XPOS);
+    rAssert(bird->pos.f.x + 0.01f > g_worldBirdXPos && bird->pos.f.x - 0.01f < g_worldBirdXPos);
 
     sprite_t* tmp;
 
-    for (u8 i = 0; i < g_spriteIdx; i++) {
-        tmp = g_sprites + i;
+    for (u8 i = 0; i < g_wSpriteIdx; i++) {
+        tmp = g_wSprites + i;
 
         if (tmp->spriteType != SPRITE_PIPE)
             continue;
@@ -342,7 +386,7 @@ bool checkCollision(sprite_t* bird)
         rAssert(tmp->posType == POS_TYPE_INT);
 
         // check for horizontal collision
-        if (tmp->pos.i.x > WORLD_BIRD_STD_XPOS + bird->width || tmp->pos.i.x + tmp->width < WORLD_BIRD_STD_XPOS)
+        if (tmp->pos.i.x > g_worldBirdXPos + bird->width || tmp->pos.i.x + tmp->width < g_worldBirdXPos)
             continue;
 
         // check for vertical collision
@@ -375,13 +419,13 @@ void handleBirdVerticalSpeed(sprite_t* bird, u64 dt, bool updraft)
     static f32 dy = 0.0f;
 
     if (dy < 0.0f)
-        dy *= WORLD_UPDRAFT_DAMPENING;
+        dy *= g_worldUpdraftDamping;
 
     if (updraft) {
-        dy = WORLD_UPDRAFT_V;
+        dy = g_worldUpdraftVelocity;
     } else {
         // v = a * t
-        dy += WORLD_GRAVITY_ACCEL * (f32) dt / 1000;
+        dy += g_worldGravityAccel * (f32) dt / 1000;
     }
 
     // integrate vertical velocity to bird pos

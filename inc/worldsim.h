@@ -10,19 +10,24 @@
 
 #define WORLD_MAX_SPRITES   8
 
-// world simulation constants
-#define WORLD_GRAVITY_ACCEL         (7.0f)
-#define WORLD_BASE_SCROLL_INTERVAL  (200)
-#define WORLD_BIRD_STD_XPOS         (23.0f)
-#define WORLD_UPDRAFT_V             (-20.0f)
-#define WORLD_UPDRAFT_DAMPENING     (0.95f)
-
+// position vector types
 #define POS_TYPE_FLOAT      0
 #define POS_TYPE_INT        1
 
+// sprite types
 #define SPRITE_UNDEF        0
 #define SPRITE_BIRD         1
 #define SPRITE_PIPE         2
+
+// world simulation default valules
+#define WORLD_STD_GRAVITY_DV        ( 10.0f)
+#define WORLD_STD_UPDRAFT_V         (-27.0f)
+#define WORLD_STD_UPDRAFT_DAMPING   (  0.9f)
+#define WORLD_STD_SCROLL_SPEED      ( 1)
+#define WORLD_STD_BIRD_XPOS         ( 23.0f)
+#define WORLD_STD_BIRD_YPOS         ( 10.0f)
+#define WORLD_STD_FIRST_PIPE        ( 47)
+#define WORLD_STD_PIPE_DISTANCE     ( 50)
 
 // typedefs
 typedef u8 wstate_t;        // type for world states
@@ -53,7 +58,7 @@ typedef struct sprite_s {   // sprite data
 } sprite_t;
 
 sprite_t* addSprite(u16 width, u16 height, u16 posType, u16 spriteType, i32 xpos_i, i32 ypos_i, f32 xpos_f, f32 ypos_f);
-sprite_t* addPipe(i32 xpos, i32 ypos, u16 height);
+sprite_t* addPipe(i32 xpos, i32 ypos, u16 height, bool direction);
 sprite_t* addBird(f32 xpos, f32 ypos);
 
 void moveSprite(sprite_t* sprite, i32 dx_i, i32 dy_i, f32 dx_f, f32 dy_f);
@@ -69,6 +74,7 @@ i64  updateWorld(u64 dt, bool updraft);
 sprite_t* getBird(void);
 void scrollScreen(void);
 void resetPipe(sprite_t* pipe);
+i32  randomizePipe(bool direction);
 bool checkCollision(sprite_t* bird);
 void handleBirdVerticalSpeed(sprite_t* bird, u64 dt, bool updraft);
 
