@@ -28,6 +28,7 @@ u16 g_worldFirstPipeDistance =  WORLD_STD_FIRST_PIPE;
 u16 g_worldPipeDistance =       WORLD_STD_PIPE_DISTANCE;
 u8  g_worldScrollInterval =     WORLD_STD_SCROLL_SPEED;
 
+// sprite textures
 const texturedata_t g_pipeData[4][8] = {
     { 2,  2,  2,  2,  2,  2,  2,  2},
     { 2, 10, 10, 10, 15, 10, 10,  2},
@@ -35,7 +36,7 @@ const texturedata_t g_pipeData[4][8] = {
     {16,  2, 10, 10, 15, 10,  2, 16}
 };
 
-const texturedata_t g_pipeDataYlw[4][8] = {
+const texturedata_t g_pipeDataY[4][8] = {
     { 3,  3,  3,  3,  3,  3,  3,  3},
     { 3, 11, 11, 11, 15, 11, 11,  3},
     {16,  3, 11, 11, 15, 11,  3, 16},
@@ -57,7 +58,25 @@ static inline i32 randRange(i32 lbound, i32 ubound)
     return (rand() % (ubound - lbound)) + lbound;
 }
 
-void setDefaults(void)
+// getters
+f32 getGravity(void) { return g_worldGravityAccel; }
+
+f32 getUpdraftStrength(void) { return -g_worldUpdraftVelocity; }
+
+f32 getUpdraftDamping(void) { return g_worldUpdraftDamping; }
+
+u8  getScrollInterval(void) { return g_worldScrollInterval; }
+
+f32 getBirdXPos(void) { return g_worldBirdXPos; }
+
+f32 getBirdYPos(void) { return g_worldBirdYPos; }
+
+u16 getFirstPipeDistance(void) { return g_worldFirstPipeDistance; }
+
+u16 getPipeDistance(void) { return g_worldPipeDistance; }
+
+// parameter so function can be called directly from menu nav
+void setDefaults(u8 context)
 {
     g_worldGravityAccel = WORLD_STD_GRAVITY_DV;
     g_worldUpdraftVelocity = WORLD_STD_UPDRAFT_V;
@@ -69,56 +88,68 @@ void setDefaults(void)
     g_worldScrollInterval = WORLD_STD_SCROLL_SPEED;
 }
 
-void setGravity(f32 gravity)
+void incrementGravity(u8 context)
 {
-    rAssert(gravity > 0.0f);
-
-    g_worldGravityAccel = gravity;
+    if (context == SETTINGS_INCREASE && g_worldGravityAccel + SETTINGS_GRAVITY_INCR < WORLD_MAX_GRAVITY)
+        g_worldGravityAccel += SETTINGS_GRAVITY_INCR;
+    else if (context == SETTINGS_DECREASE && g_worldGravityAccel - SETTINGS_GRAVITY_INCR > 0.0f)
+        g_worldGravityAccel -= SETTINGS_GRAVITY_INCR;
 }
 
-void setUpdraftStrength(f32 strength)
+void incrementUpdraftStrength(u8 context)
 {
-    rAssert(strength > 0.0f);
-
-    g_worldUpdraftVelocity = -strength;
+    if (context == SETTINGS_DECREASE && g_worldUpdraftVelocity - SETTINGS_UPDRAFT_INCR < 0.0f)
+        g_worldUpdraftVelocity -= SETTINGS_UPDRAFT_INCR;
+    else if (context == SETTINGS_INCREASE && g_worldUpdraftVelocity + SETTINGS_UPDRAFT_INCR > WORLD_MAX_UPDRAFT_V)
+        g_worldUpdraftVelocity += SETTINGS_UPDRAFT_INCR;
 }
 
-void setUpdraftDamping(f32 damping)
+void incrementUpdraftDamping(u8 context)
 {
-    rAssert(damping > 0.0f && damping < 1.0f);
-
-    g_worldUpdraftDamping = damping;
+    if (context == SETTINGS_INCREASE && g_worldUpdraftDamping + SETTINGS_DAMPING_INCR < WORLD_MAX_UPDRAFT_DAMPING)
+        g_worldUpdraftDamping += SETTINGS_DAMPING_INCR;
+    else if (context == SETTINGS_DECREASE && g_worldUpdraftDamping - SETTINGS_DAMPING_INCR > WORLD_MIN_UPDRAFT_DAMPING)
+        g_worldUpdraftDamping -= SETTINGS_DAMPING_INCR;
 }
 
-void setScrollInterval(u8 interval)
+void incrementScrollInterval(u8 context)
 {
-    rAssert(interval);
-
-    g_worldScrollInterval = interval;
+    if (context == SETTINGS_INCREASE)
+        g_worldScrollInterval++;
+    else if (context == SETTINGS_DECREASE && g_worldScrollInterval > 1)
+        g_worldScrollInterval--;
 }
 
-void setBirdXPos(f32 xpos)
+void incrementBirdXPos(u8 context)
 {
-    rAssert(xpos > 0.0f && xpos < WORLD_WIDTH - 8);
-
-    g_worldBirdXPos = xpos;
+    if (context == SETTINGS_INCREASE && g_worldBirdXPos + SETTINGS_POS_INCR < WORLD_MAX_BIRD_XPOS)
+        g_worldBirdXPos += SETTINGS_POS_INCR;
+    else if (context == SETTINGS_DECREASE && g_worldBirdXPos - SETTINGS_POS_INCR > 0.0f)
+        g_worldBirdXPos -= SETTINGS_POS_INCR;
 }
 
-void setBirdYPos(f32 ypos)
+void incrementBirdYPos(u8 context)
 {
-    rAssert(ypos > 0.0f && ypos < WORLD_HEIGHT - 6);
-
-    g_worldBirdYPos = ypos;
+    if (context == SETTINGS_INCREASE && g_worldBirdYPos + SETTINGS_POS_INCR < WORLD_MAX_BIRD_YPOS)
+        g_worldBirdYPos += SETTINGS_POS_INCR;
+    else if (context == SETTINGS_DECREASE && g_worldBirdYPos - SETTINGS_POS_INCR > 0.0f)
+        g_worldBirdYPos -= SETTINGS_POS_INCR;
 }
 
-void setFirstPipeDistance(u16 distance)
+void incrementFirstPipe(u8 context)
 {
-    g_worldFirstPipeDistance = distance;
+    if (context == SETTINGS_INCREASE && g_worldFirstPipeDistance + SETTINGS_POS_INCR < WORLD_MAX_FIRST_PIPE)
+        g_worldFirstPipeDistance += SETTINGS_POS_INCR;
+    else if (context == SETTINGS_DECREASE && g_worldFirstPipeDistance - SETTINGS_POS_INCR > 0)
+        g_worldFirstPipeDistance -= SETTINGS_POS_INCR;
 }
 
-void setPipeDistance(u16 distance)
+void incrementPipeDistance(u8 context)
 {
-    g_worldPipeDistance = distance;
+    if (context == SETTINGS_INCREASE && g_worldPipeDistance + SETTINGS_POS_INCR < WORLD_MAX_PIPE_DISTANCE)
+        g_worldPipeDistance += SETTINGS_POS_INCR;
+    else if (context == SETTINGS_DECREASE && g_worldPipeDistance - SETTINGS_POS_INCR > 0)
+        g_worldPipeDistance -= SETTINGS_POS_INCR;
 }
 
 sprite_t* addSprite(u16 width, u16 height, u16 posType, u16 spriteType, i32 xpos_i, i32 ypos_i, f32 xpos_f, f32 ypos_f)

@@ -5,9 +5,10 @@
 #include <render.h>
 #include <interface.h>
 
-const char* mainMenuItems[3] = {
+const char* mainMenuItems[4] = {
     "Start",
     "Highscores",
+    "Settings",
     "Quit"
 };
 
@@ -20,9 +21,9 @@ int main(void)
     if (!initCmdRenderer())
         return EXIT_FAILURE;
 
-    const nav_f mainNav[3] = {flappyController, dummyCallback, exitCallback};
+    const nav_f mainNav[4] = {flappyController, dummyCallback, settingsController, exitCallback};
 
-    menu_t mainMenu = {"MAIN MENU", mainMenuItems, mainNav, 0, 3};
+    menu_t mainMenu = {"MAIN MENU", mainMenuItems, mainNav, 0, 4};
 
     menuController(&mainMenu);
 

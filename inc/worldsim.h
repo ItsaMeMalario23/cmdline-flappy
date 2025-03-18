@@ -19,7 +19,12 @@
 #define SPRITE_BIRD         1
 #define SPRITE_PIPE         2
 
-// world simulation default valules
+// settings operation types
+#define SETTINGS_DECREASE   0
+#define SETTINGS_INCREASE   1
+#define SETTINGS_NOP        2
+
+// world simulation default values
 #define WORLD_STD_GRAVITY_DV        ( 10.0f)
 #define WORLD_STD_UPDRAFT_V         (-27.0f)
 #define WORLD_STD_UPDRAFT_DAMPING   (  0.9f)
@@ -28,6 +33,21 @@
 #define WORLD_STD_BIRD_YPOS         ( 10.0f)
 #define WORLD_STD_FIRST_PIPE        ( 47)
 #define WORLD_STD_PIPE_DISTANCE     ( 50)
+
+#define WORLD_MAX_GRAVITY           ( 100.0f)
+#define WORLD_MAX_UPDRAFT_V         (-200.0f)
+#define WORLD_MIN_UPDRAFT_DAMPING   (   0.1f)
+#define WORLD_MAX_UPDRAFT_DAMPING   (   1.0f)
+#define WORLD_MAX_BIRD_XPOS         (WORLD_WIDTH - 8)
+#define WORLD_MAX_BIRD_YPOS         (WORLD_HEIGHT - 6)
+#define WORLD_MAX_FIRST_PIPE        ( 200)
+#define WORLD_MAX_PIPE_DISTANCE     ( 200)
+
+#define SETTINGS_GRAVITY_INCR       ( 1.0f)
+#define SETTINGS_UPDRAFT_INCR       (-1.0f)
+#define SETTINGS_DAMPING_INCR       ( 0.01f)
+#define SETTINGS_SCROLL_INCR        ( 1)
+#define SETTINGS_POS_INCR           ( 1.0f)
 
 // typedefs
 typedef u8 wstate_t;        // type for world states
@@ -57,15 +77,27 @@ typedef struct sprite_s {   // sprite data
 
 } sprite_t;
 
-void setDefaults(void);
-void setGravity(f32 gravity);
-void setUpdraftStrength(f32 strength);
-void setUpdraftDamping(f32 damping);
-void setScrollInterval(u8 interval);
-void setBirdXPos(f32 xpos);
-void setBirdYPos(f32 ypos);
-void setFirstPipeDistance(u16 distance);
-void setPipeDistance(u16 distance);
+//
+//  Public functions
+//
+f32 getGravity(void);
+f32 getUpdraftStrength(void);
+f32 getUpdraftDamping(void);
+u8  getScrollInterval(void);
+f32 getBirdXPos(void);
+f32 getBirdYPos(void);
+u16 getFirstPipeDistance(void);
+u16 getPipeDistance(void);
+
+void setDefaults(u8 context);
+void incrementGravity(u8 context);
+void incrementUpdraftStrength(u8 context);
+void incrementUpdraftDamping(u8 context);
+void incrementScrollInterval(u8 context);
+void incrementBirdXPos(u8 context);
+void incrementBirdYPos(u8 context);
+void incrementFirstPipe(u8 context);
+void incrementPipeDistance(u8 context);
 
 sprite_t* addSprite(u16 width, u16 height, u16 posType, u16 spriteType, i32 xpos_i, i32 ypos_i, f32 xpos_f, f32 ypos_f);
 sprite_t* addPipe(i32 xpos, i32 ypos, u16 height, bool direction);
@@ -81,6 +113,9 @@ void cleanupWorld(void);
 void requestWorldRebuild(void);
 i64  updateWorld(u64 dt, bool updraft);
 
+//
+//  Local functions
+//
 sprite_t* getBird(void);
 void scrollScreen(void);
 void resetPipe(sprite_t* pipe);
